@@ -30,7 +30,15 @@ android {
     defaultConfig {
         applicationId = "com.example.piliplus"
         minSdk = flutter.minSdkVersion
-        targetSdk = 37
+        // 故意停留在 35（上游为 37）。
+        // 原因：Android 16（API 36）起，只要 targetSdk >= 36，在最小宽度 >= 600dp 的
+        // 大屏上系统会忽略一切方向请求（screenOrientation / setRequestedOrientation，
+        // 含 sensorLandscape、userLandscape 等全部值），官方兼容属性
+        // PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY 也不恢复方向锁定；
+        // targetSdk 37 更是连豁免都没有。结果是平板全屏时无法按视频方向旋转
+        // （手机 sw < 600dp 不受影响）。停在 35 可恢复系统方向锁定，
+        // 使平板与手机行为一致。上游若长期维持在 37，同步时需保留这里。
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
