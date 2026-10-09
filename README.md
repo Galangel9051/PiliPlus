@@ -10,9 +10,10 @@
 
 中文 | [English](README.en.md)
 
-![GitHub repo size](https://img.shields.io/github/repo-size/bggRGjQaUbCoE/PiliPlus) 
-![GitHub Repo stars](https://img.shields.io/github/stars/bggRGjQaUbCoE/PiliPlus) 
-![GitHub all releases](https://img.shields.io/github/downloads/bggRGjQaUbCoE/PiliPlus/total) 
+![GitHub repo size](https://img.shields.io/github/repo-size/Galangel9051/PiliPlus)
+![GitHub Repo stars](https://img.shields.io/github/stars/Galangel9051/PiliPlus)
+![GitHub all releases](https://img.shields.io/github/downloads/Galangel9051/PiliPlus/total)
+[![fork of](https://img.shields.io/badge/fork%20of-bggRGjQaUbCoE%2FPiliPlus-blue)](https://github.com/bggRGjQaUbCoE/PiliPlus)
 </div>
     <p>使用Flutter开发的BiliBili第三方客户端</p>
     
@@ -26,6 +27,28 @@
 
 
 <br/>
+
+> [!IMPORTANT]
+> **本仓库是 [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的 fork，不是上游官方仓库，也不代表上游立场。**
+
+## 关于本仓库
+
+本仓库由 [@Galangel9051](https://github.com/Galangel9051) 维护，用于**个人自行构建与定制**。相比上游，可能包含尚未合并回上游的本地改动。请按以下方式理解两个仓库的关系：
+
+- **想要稳定、完整、有官方支持的版本**：请前往上游 [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)。
+- **本仓库**：主要供作者自用，`main` 分支的代码即最新状态，功能与上游存在差异属正常现象。
+- **问题反馈**：与本仓库改动相关的问题，请提交到本仓库的 [Issues](https://github.com/Galangel9051/PiliPlus/issues)；与上游共有的问题请优先反馈给上游。
+
+### 与上游同步
+
+本仓库不定期手动合并上游更新：
+
+```bash
+git remote add upstream https://github.com/bggRGjQaUbCoE/PiliPlus.git
+git fetch upstream
+git merge upstream/main        # 或用 git rebase upstream/main
+git push origin main
+```
 
 ## 适配平台
 
@@ -215,7 +238,22 @@
 
 ## 下载
 
-可以从 [Releases](https://github.com/bggRGjQaUbCoE/PiliPlus/releases) 下载，或克隆仓库拉取代码后在本地编译。
+可以从 [Releases](https://github.com/Galangel9051/PiliPlus/releases) 下载（若本仓库暂无发布包，请使用上游 [Releases](https://github.com/bggRGjQaUbCoE/PiliPlus/releases)），或克隆仓库拉取代码后在本地编译。
+
+<br/>
+
+## 本地构建
+
+需要 Flutter `3.47.6`（仓库已包含 `.fvmrc`，推荐用 [fvm](https://fvm.app/) 管理版本）：
+
+```bash
+git clone https://github.com/Galangel9051/PiliPlus.git
+cd PiliPlus
+fvm install && fvm flutter pub get     # 未使用 fvm 时直接用 flutter pub get
+fvm flutter build apk --release        # Android
+```
+
+Windows / Linux / macOS / iOS 的构建流程见 `.github/workflows/` 下的对应工作流。
 
 <br/>
 
@@ -225,7 +263,10 @@
 所用API皆从官方网站收集，不提供任何破解内容。
 在此致敬原作者：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
 在此致敬上游作者：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
-本仓库做了更激进的修改，感谢原作者的开源精神。
+在此致敬原始仓库：[bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)
+本仓库基于上游做了更激进的修改，感谢原作者的开源精神。
+
+本仓库所有代码均继承自上游开源项目，遵循原项目 [LICENSE](LICENSE)，不额外附加任何权利主张。
 
 感谢使用
 
@@ -246,10 +287,10 @@
 
 ## Star History
 
-<a href="https://star-history.dera.page/#bggRGjQaUbCoE/PiliPlus&Date">
+<a href="https://star-history.dera.page/#Galangel9051/PiliPlus&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=Galangel9051/PiliPlus&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=Galangel9051/PiliPlus&type=Date" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=Galangel9051/PiliPlus&type=Date" />
  </picture>
 </a>
