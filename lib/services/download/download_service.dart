@@ -105,7 +105,10 @@ class DownloadService extends GetxService {
             } else {
               waitDownloadQueue.add(entry..status = DownloadStatus.wait);
             }
-          } catch (_) {}
+          } catch (e) {
+            // 不要静默吞掉：格式不符（例如官方客户端的缓存）会导致整个条目消失
+            debugPrint('parse download entry error: $e');
+          }
         }
       }
     }

@@ -3,6 +3,7 @@ import 'package:PiliPlus/models_new/download/download_info.dart';
 import 'package:PiliPlus/models_new/sponsor_block/segment_item.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart'
     show MultiSelectData;
+import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -12,6 +13,34 @@ import 'package:material_ui/material_ui.dart';
 
 int downloadEntrySort(BiliDownloadEntryInfo a, BiliDownloadEntryInfo b) {
   return a.sortKey.compareTo(b.sortKey);
+}
+
+/// 时间戳单位统一成秒
+///
+/// 官方客户端的缓存里是毫秒，PiliPlus 自己写入的是秒。
+/// 该字段目前只用于排序，但混用会让「最近缓存」的排序错乱。
+int _parseTimestamp(Object? value) {
+  final timestamp = switch (value) {
+    final int v => v,
+    final String v => int.tryParse(v) ?? 0,
+    _ => 0,
+  };
+  return timestamp > 999999999999 ? timestamp ~/ 1000 : timestamp;
+}
+
+/// `season_id` 在官方客户端的缓存里会写成数字 0（表示非合集），统一成 null
+String? _parseSeasonId(Object? value) {
+  if (value == null) return null;
+  final seasonId = value.toString();
+  return seasonId.isEmpty || seasonId == '0' ? null : seasonId;
+}
+
+/// `bvid` 缺失时（官方客户端的缓存为空串）用 avid 反推
+String _parseBvid(Object? value, int avid) {
+  if (value case final String bvid when bvid.isNotEmpty) {
+    return bvid;
+  }
+  return IdUtils.av2bv(avid);
 }
 
 class BiliDownloadEntryInfo with MultiSelectData {
@@ -174,47 +203,49 @@ class BiliDownloadEntryInfo with MultiSelectData {
     this.seasonInfo,
   });
 
-  factory BiliDownloadEntryInfo.fromJson(Map<String, dynamic> json) =>
-      BiliDownloadEntryInfo(
-        mediaType: json['media_type'] as int,
-        hasDashAudio: json['has_dash_audio'] as bool,
-        isCompleted: json['is_completed'] as bool,
-        totalBytes: json['total_bytes'] as int,
-        downloadedBytes: json['downloaded_bytes'] as int,
-        title: json['title'] as String,
-        typeTag: json['type_tag'] as String?,
-        cover: json['cover'] as String,
-        videoQuality: json['video_quality'] as int?,
-        preferedVideoQuality: json['prefered_video_quality'] as int,
-        qualityPithyDescription: json['quality_pithy_description'] as String,
-        guessedTotalBytes: json['guessed_total_bytes'] as int,
-        totalTimeMilli: json['total_time_milli'] as int,
-        danmakuCount: json['danmaku_count'] as int,
-        timeUpdateStamp: json['time_update_stamp'] as int,
-        timeCreateStamp: json['time_create_stamp'] as int,
-        canPlayInAdvance: json['can_play_in_advance'] as bool,
-        interruptTransformTempFile:
-            json['interrupt_transform_temp_file'] as bool,
-        avid: json['avid'] as int,
-        spid: json['spid'] as int?,
-        bvid: json['bvid'] as String,
-        ownerId: json['owner_id'] as int?,
-        ownerName: json['owner_name'] as String?,
-        pageData: json['page_data'] != null
-            ? PageInfo.fromJson(json['page_data'] as Map<String, dynamic>)
-            : null,
-        seasonId: json['season_id'] as String?,
-        source: json['source'] != null
-            ? SourceInfo.fromJson(json['source'] as Map<String, dynamic>)
-            : null,
-        ep: json['ep'] != null
-            ? EpInfo.fromJson(json['ep'] as Map<String, dynamic>)
-            : null,
-        segments: SegmentItemModel.fromCache(json['segments']),
-        seasonInfo: json['season_info'] != null
-            ? SeasonInfo.fromJson(json['season_info'] as Map<String, dynamic>)
-            : null,
-      );
+  factory BiliDownloadEntryInfo.fromJson(Map<String, dynamic> json) {
+    final avid = json['avid'] as int;
+    return BiliDownloadEntryInfo(
+      mediaType: json['media_type'] as int,
+      hasDashAudio: json['has_dash_audio'] as bool,
+      isCompleted: json['is_completed'] as bool,
+      totalBytes: json['total_bytes'] as int,
+      downloadedBytes: json['downloaded_bytes'] as int,
+      title: json['title'] as String,
+      typeTag: json['type_tag'] as String?,
+      cover: json['cover'] as String,
+      videoQuality: json['video_quality'] as int?,
+      preferedVideoQuality: json['prefered_video_quality'] as int,
+      qualityPithyDescription: json['quality_pithy_description'] as String,
+      guessedTotalBytes: json['guessed_total_bytes'] as int,
+      totalTimeMilli: json['total_time_milli'] as int,
+      danmakuCount: json['danmaku_count'] as int,
+      timeUpdateStamp: _parseTimestamp(json['time_update_stamp']),
+      timeCreateStamp: _parseTimestamp(json['time_create_stamp']),
+      canPlayInAdvance: json['can_play_in_advance'] as bool,
+      interruptTransformTempFile:
+          json['interrupt_transform_temp_file'] as bool,
+      avid: avid,
+      spid: json['spid'] as int?,
+      bvid: _parseBvid(json['bvid'], avid),
+      ownerId: json['owner_id'] as int?,
+      ownerName: json['owner_name'] as String?,
+      pageData: json['page_data'] != null
+          ? PageInfo.fromJson(json['page_data'] as Map<String, dynamic>)
+          : null,
+      seasonId: _parseSeasonId(json['season_id']),
+      source: json['source'] != null
+          ? SourceInfo.fromJson(json['source'] as Map<String, dynamic>)
+          : null,
+      ep: json['ep'] != null
+          ? EpInfo.fromJson(json['ep'] as Map<String, dynamic>)
+          : null,
+      segments: SegmentItemModel.fromCache(json['segments']),
+      seasonInfo: json['season_info'] != null
+          ? SeasonInfo.fromJson(json['season_info'] as Map<String, dynamic>)
+          : null,
+    );
+  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'media_type': mediaType,
