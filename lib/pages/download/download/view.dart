@@ -9,8 +9,11 @@ import 'package:PiliPlus/models_new/download/download_info.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/pages/download/detail/widgets/item.dart';
 import 'package:PiliPlus/pages/download/download/controller.dart';
+import 'package:PiliPlus/pages/download/download/widgets/category_bar.dart';
+import 'package:PiliPlus/pages/download/download/widgets/category_dialog.dart';
 import 'package:PiliPlus/pages/download/download/widgets/page.dart';
 import 'package:PiliPlus/pages/download/download/widgets/season.dart';
+import 'package:PiliPlus/pages/download/download/widgets/sort_tile.dart';
 import 'package:PiliPlus/pages/download/download_action_mixin.dart';
 import 'package:PiliPlus/pages/download/search/view.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
@@ -97,6 +100,18 @@ class _DownloadPageState extends State<DownloadPage>
     toastUpdateResult(dismiss, isSuccess);
   }
 
+  Widget _categoryBtn() => TextButton(
+    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+    onPressed: () {
+      showPickCategoryDialog(
+        title: '移动到分类',
+        pageIds: _controller.allChecked.map((e) => e.pageId).toSet(),
+        onPick: _controller.moveCheckedToCategory,
+      );
+    },
+    child: Text('分类', style: TextStyle(color: colorScheme.onSurface)),
+  );
+
   Future<void> _updateSeasonDm(DownloadSeasonInfo seasonInfo) async {
     if (checkUpdateCount(
       seasonInfo.pages.fold(0, (a, b) => a + b.entries.length),
@@ -126,22 +141,30 @@ class _DownloadPageState extends State<DownloadPage>
     toastUpdateResult(dismiss, isSuccess);
   }
 
+  Widget _sectionTitle(String text, {double top = 0}) => SliverPadding(
+    padding: EdgeInsets.only(left: 12, bottom: 7, top: top),
+    sliver: SliverToBoxAdapter(child: Text(text)),
+  );
+
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
     return Obx(() {
       final enableMultiSelect = _controller.enableMultiSelect.value;
+      final sorting = _controller.sortMode.value;
       return popScope(
-        canPop: !enableMultiSelect,
+        canPop: !enableMultiSelect && !sorting,
         onPopInvokedWithResult: (didPop, result) {
           if (enableMultiSelect) {
             _controller.handleSelect();
+          } else if (sorting) {
+            _controller.sortMode.value = false;
           }
         },
         child: SimpleScaffold(
           appBar: MultiSelectAppBarWidget(
             ctr: _controller,
-            actions: [updateBtn()],
+            actions: [updateBtn(), _categoryBtn()],
             child: AppBar(
               title: const Text('离线缓存'),
               actions: [
@@ -165,6 +188,7 @@ class _DownloadPageState extends State<DownloadPage>
                     if (enableMultiSelect) {
                       _controller.handleSelect();
                     } else {
+                      _controller.sortMode.value = false;
                       _controller.enableMultiSelect.value = true;
                     }
                   },
@@ -174,131 +198,181 @@ class _DownloadPageState extends State<DownloadPage>
               ],
             ),
           ),
-          body: Padding(
-            padding: EdgeInsets.only(left: padding.left, right: padding.right),
-            child: CustomScrollView(
-              slivers: [
-                Obx(() {
-                  final entry =
-                      downloadService.waitDownloadQueue.firstWhereOrNull(
-                        (e) => e.cid == downloadService.curCid,
-                      ) ??
-                      downloadService.waitDownloadQueue.firstOrNull;
-                  if (entry != null) {
-                    return SliverMainAxisGroup(
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.only(left: 12, bottom: 7),
-                          sliver: SliverToBoxAdapter(
-                            child: Text(
-                              '正在缓存 (${downloadService.waitDownloadQueue.length})',
-                            ),
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: 110,
-                            child: DetailItem(
-                              entry: entry,
-                              progress: _progress,
-                              downloadService: downloadService,
-                              showTitle: true,
-                              isCurr: true,
-                              controller: _controller,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return const SliverToBoxAdapter();
-                }),
-                Obx(() {
-                  if (_controller.seasons.isNotEmpty) {
-                    return SliverMainAxisGroup(
-                      slivers: [
-                        SliverPadding(
-                          padding: EdgeInsets.only(
-                            left: 12,
-                            bottom: 7,
-                            top: downloadService.waitDownloadQueue.isEmpty
-                                ? 0
-                                : 7,
-                          ),
-                          sliver: const SliverToBoxAdapter(
-                            child: Text('已缓存视频'),
-                          ),
-                        ),
-                        SliverGrid.builder(
-                          gridDelegate: gridDelegate,
-                          itemBuilder: (context, index) {
-                            final season = _controller.seasons[index];
-                            final seasonInfo = season.seasonInfo;
-                            final pages = season.pages;
-
-                            if (seasonInfo != null && pages.length > 1) {
-                              return SeasonInfoItem(
-                                controller: _controller,
-                                downloadService: downloadService,
-                                seasonInfo: seasonInfo,
-                                season: season,
-                                enableMultiSelect: enableMultiSelect,
-                                progress: _progress,
-                                updateSeasonDm: _updateSeasonDm,
-                              );
-                            }
-
-                            final page = pages.first;
-                            if (pages.length == 1 && page.entries.length == 1) {
-                              final entry = page.entries.first;
-                              return DetailItem(
-                                entry: entry,
-                                progress: _progress,
-                                downloadService: downloadService,
-                                showTitle: true,
-                                onDelete: () {
-                                  downloadService.deleteDownload(
+          body: Column(
+            children: [
+              DownloadCategoryBar(controller: _controller),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: padding.left,
+                    right: padding.right,
+                  ),
+                  child: CustomScrollView(
+                    slivers: [
+                      Obx(() {
+                        final entry =
+                            downloadService.waitDownloadQueue.firstWhereOrNull(
+                              (e) => e.cid == downloadService.curCid,
+                            ) ??
+                            downloadService.waitDownloadQueue.firstOrNull;
+                        if (entry != null) {
+                          return SliverMainAxisGroup(
+                            slivers: [
+                              _sectionTitle(
+                                '正在缓存 (${downloadService.waitDownloadQueue.length})',
+                              ),
+                              SliverToBoxAdapter(
+                                child: SizedBox(
+                                  height: 110,
+                                  child: DetailItem(
                                     entry: entry,
-                                    removeList: true,
-                                  );
-                                  GStorage.watchProgress.delete(
-                                    entry.cid.toString(),
-                                  );
-                                },
-                                checked: season.checked,
-                                onSelect: (_) => _controller.onSelect(season),
-                                controller: _controller,
-                              );
-                            }
-
-                            return PageInfoItem(
-                              controller: _controller,
-                              downloadService: downloadService,
-                              seasonInfo: season,
-                              pageInfo: page,
-                              enableMultiSelect: enableMultiSelect,
-                              progress: _progress,
-                              updatePageDm: updatePageDm,
-                            );
-                          },
-                          itemCount: _controller.seasons.length,
-                        ),
-                      ],
-                    );
-                  }
-                  if (downloadService.waitDownloadQueue.isNotEmpty) {
-                    return const SliverToBoxAdapter();
-                  }
-                  return const HttpError();
-                }),
-                SliverToBoxAdapter(
-                  child: SizedBox(height: padding.bottom + 100),
+                                    progress: _progress,
+                                    downloadService: downloadService,
+                                    showTitle: true,
+                                    isCurr: true,
+                                    controller: _controller,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return const SliverToBoxAdapter();
+                      }),
+                      Obx(() {
+                        final sliver = _buildCachedSliver(
+                          enableMultiSelect,
+                          sorting,
+                        );
+                        if (sliver != null) {
+                          return sliver;
+                        }
+                        if (downloadService.waitDownloadQueue.isNotEmpty &&
+                            _controller.seasons.isEmpty) {
+                          return const SliverToBoxAdapter();
+                        }
+                        return const HttpError();
+                      }),
+                      SliverToBoxAdapter(
+                        child: SizedBox(height: padding.bottom + 100),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     });
+  }
+
+  SliverMainAxisGroup? _buildCachedSliver(
+    bool enableMultiSelect,
+    bool sorting,
+  ) {
+    final list = _controller.displaySeasons;
+    if (list.isEmpty) {
+      if (_controller.seasons.isEmpty) {
+        return null;
+      }
+      return SliverMainAxisGroup(
+        slivers: [
+          _sectionTitle(
+            '已缓存视频',
+            top: downloadService.waitDownloadQueue.isEmpty ? 0 : 7,
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 60),
+              child: Center(
+                child: Text(
+                  '该分类下暂无缓存视频',
+                  style: TextStyle(
+                    color: ColorScheme.of(context).outline,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SliverMainAxisGroup(
+      slivers: [
+        _sectionTitle(
+          sorting ? '拖拽调整顺序（${list.length}）' : '已缓存视频（${list.length}）',
+          top: downloadService.waitDownloadQueue.isEmpty ? 0 : 7,
+        ),
+        if (sorting)
+          SliverReorderableList(
+            itemCount: list.length,
+            onReorderItem: _controller.onReorder,
+            itemBuilder: (context, index) {
+              final season = list[index];
+              return DownloadSortTile(
+                key: ValueKey(season.pageId),
+                season: season,
+                index: index,
+              );
+            },
+          )
+        else
+          SliverGrid.builder(
+            gridDelegate: gridDelegate,
+            itemBuilder: (context, index) {
+              final season = list[index];
+              final seasonInfo = season.seasonInfo;
+              final pages = season.pages;
+
+              if (seasonInfo != null && pages.length > 1) {
+                return SeasonInfoItem(
+                  controller: _controller,
+                  downloadService: downloadService,
+                  seasonInfo: seasonInfo,
+                  season: season,
+                  enableMultiSelect: enableMultiSelect,
+                  progress: _progress,
+                  updateSeasonDm: _updateSeasonDm,
+                );
+              }
+
+              final page = pages.first;
+              if (pages.length == 1 && page.entries.length == 1) {
+                final entry = page.entries.first;
+                return DetailItem(
+                  entry: entry,
+                  progress: _progress,
+                  downloadService: downloadService,
+                  showTitle: true,
+                  onDelete: () {
+                    downloadService.deleteDownload(
+                      entry: entry,
+                      removeList: true,
+                    );
+                    GStorage.watchProgress.delete(entry.cid.toString());
+                  },
+                  checked: season.checked,
+                  onSelect: (_) => _controller.onSelect(season),
+                  controller: _controller,
+                );
+              }
+
+              return PageInfoItem(
+                controller: _controller,
+                downloadService: downloadService,
+                seasonInfo: season,
+                pageInfo: page,
+                enableMultiSelect: enableMultiSelect,
+                progress: _progress,
+                updatePageDm: updatePageDm,
+              );
+            },
+            itemCount: list.length,
+          ),
+      ],
+    );
   }
 }

@@ -14,7 +14,9 @@ import 'package:PiliPlus/models/common/video/source_type.dart';
 import 'package:PiliPlus/models/common/video/video_quality.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
+import 'package:PiliPlus/pages/download/download/widgets/category_dialog.dart';
 import 'package:PiliPlus/pages/download/downloading/view.dart';
+import 'package:PiliPlus/services/download/download_category_store.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -88,6 +90,21 @@ class DetailItem extends StatelessWidget {
               clipBehavior: Clip.hardEdge,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
               children: [
+                DialogOption(
+                  onPressed: () {
+                    Get.back();
+                    showPickCategoryDialog(
+                      title: '移动到分类',
+                      pageIds: {entry.pageId},
+                      onPick: (categoryId) =>
+                          DownloadCategoryStore.moveToCategory(
+                            [entry.pageId],
+                            categoryId,
+                          ),
+                    );
+                  },
+                  child: const Text('移动到分类', style: TextStyle(fontSize: 14)),
+                ),
                 DialogOption(
                   onPressed: () {
                     Get.back();

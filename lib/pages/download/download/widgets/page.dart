@@ -7,6 +7,8 @@ import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/models_new/download/download_info.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/pages/download/detail/view.dart';
+import 'package:PiliPlus/pages/download/download/widgets/category_dialog.dart';
+import 'package:PiliPlus/services/download/download_category_store.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -48,6 +50,21 @@ class PageInfoItem<T extends MultiSelectData> extends StatelessWidget {
               clipBehavior: Clip.hardEdge,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
               children: [
+                DialogOption(
+                  onPressed: () {
+                    Get.back();
+                    showPickCategoryDialog(
+                      title: '移动到分类',
+                      pageIds: {pageInfo.pageId},
+                      onPick: (categoryId) =>
+                          DownloadCategoryStore.moveToCategory(
+                            [pageInfo.pageId],
+                            categoryId,
+                          ),
+                    );
+                  },
+                  child: const Text('移动到分类', style: TextStyle(fontSize: 14)),
+                ),
                 DialogOption(
                   onPressed: () {
                     Get.back();

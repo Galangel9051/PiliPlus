@@ -241,6 +241,11 @@ abstract final class SettingBoxKey {
       liveCdnUrl = 'liveCdnUrl',
       saveReply = 'saveReply',
       appFont = 'appFont';
+
+  // 离线缓存的「分类 / 排序」是软件内的逻辑标签，不会改动磁盘上的目录结构
+  static const String downloadCategories = 'downloadCategories',
+      downloadEntryCategory = 'downloadEntryCategory',
+      downloadEntryOrder = 'downloadEntryOrder';
 }
 
 abstract final class LocalCacheKey {
