@@ -17,6 +17,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as path;
+import 'package:share_plus/share_plus.dart';
 
 /// 离线缓存（本地视频数据）的导入/导出
 abstract final class DownloadDataUtils {
@@ -301,23 +302,37 @@ abstract final class DownloadDataUtils {
   }
 
   static Future<void> _saveZipToLocal(File zip, String fileName) async {
-    final isDesktop = PlatformUtils.isDesktop;
-    final uri = await FilePicker.saveFile(
-      fileName: fileName,
-      bytes: isDesktop ? Uint8List(0) : await zip.readAsBytes(),
-      mimeType: _zipMime,
-      dialogTitle: '导出本地视频数据',
-      type: FileType.custom,
-      allowedExtensions: const [_zipExt],
-    );
-    if (uri == null) {
-      SmartDialog.showToast('已取消导出');
+    if (PlatformUtils.isDesktop) {
+      final uri = await FilePicker.saveFile(
+        fileName: fileName,
+        // 桌面端只需要一个目标路径，真正的字节由 File.copy 流式写入
+        bytes: Uint8List(0),
+        mimeType: _zipMime,
+        dialogTitle: '导出本地视频数据',
+        type: FileType.custom,
+        allowedExtensions: const [_zipExt],
+      );
+      if (uri == null) {
+        SmartDialog.showToast('已取消导出');
+        return;
+      }
+      await zip.copy(uri.toFilePath());
+      SmartDialog.showToast('导出成功');
       return;
     }
-    if (isDesktop) {
-      await zip.copy(uri.toFilePath());
+
+    // 移动端不能走 FilePicker.saveFile：它要求把整个文件的字节一次性读进内存
+    // 再通过 method channel 交给 SAF，缓存稍大就会 OOM。
+    // 改用系统分享面板，由原生端流式复制到用户选择的位置（「保存到文件」）。
+    final result = await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(zip.path, mimeType: _zipMime, name: fileName)],
+        subject: fileName,
+      ),
+    );
+    if (result.status != ShareResultStatus.dismissed) {
+      SmartDialog.showToast('导出完成');
     }
-    SmartDialog.showToast('导出成功');
   }
 }
 
