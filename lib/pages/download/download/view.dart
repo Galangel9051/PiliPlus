@@ -14,6 +14,7 @@ import 'package:PiliPlus/pages/download/download/widgets/season.dart';
 import 'package:PiliPlus/pages/download/download_action_mixin.dart';
 import 'package:PiliPlus/pages/download/search/view.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/utils/download_data_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -144,6 +145,11 @@ class _DownloadPageState extends State<DownloadPage>
             child: AppBar(
               title: const Text('离线缓存'),
               actions: [
+                IconButton(
+                  tooltip: '导入/导出',
+                  onPressed: () => DownloadDataUtils.showMenu(context),
+                  icon: const Icon(Icons.import_export),
+                ),
                 IconButton(
                   tooltip: '搜索',
                   onPressed: () async {
