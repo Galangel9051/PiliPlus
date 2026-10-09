@@ -150,3 +150,6 @@ pili_release.json
 dist
 
 test*
+
+# WorkBuddy 本地工作数据（AI 记忆、构建笔记等，不入库）
+.workbuddy/
